@@ -5,13 +5,16 @@ import './index.css';
 
 import 'rxjs/add/operator/map';
 
-const rxJupyter = require('rx-jupyter');
-
-const jupyter = new rxJupyter.JupyterAPI("http://localhost:8888", true);
+const jupyter = require('rx-jupyter');
 
 window.jupyter = jupyter;
 
-jupyter.listKernelspecs()
+const serverConfig = {
+  endpoint: "http://localhost:8888",
+  crossDomain: true,
+};
+
+jupyter.kernelspecs.list(serverConfig)
   .subscribe(x => {
     ReactDOM.render(
       <App data={JSON.stringify(x.response, 2, 2)} />,
