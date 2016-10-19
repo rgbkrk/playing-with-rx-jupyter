@@ -67,18 +67,27 @@ window.serverConfig = serverConfig;
 // To get around this, we wrap the Observables by creating a new Observable
 const wrap = Rx.Observable.from;
 
-const api = wrap(jupyter.apiVersion(serverConfig));
+const version = jupyter.apiVersion(serverConfig);
+const kernels = jupyter.kernels.list(serverConfig);
 
-wrap(jupyter.kernels.list(serverConfig))
-  .map(x => x.response)
-  .subscribe(kernels => {
-    ReactDOM.render(
-      <div>
-        { kernels.map(kernel =>
-          <pre key={kernel.id}>{kernel.id}</pre>
-        )}
-      </div>,
-      document.getElementById('root')
-    );
+const state$ = Rx.Observable.combineLatest(version, kernels,
+  (version, kernels) => ({ version: version.response.version, kernels: kernels.response }));
+
+const root = document.getElementById('root');
+
+const App = (props) =>
+  <div>
+    <pre>Version: {props.version}</pre>
+    <div>
+      { props.kernels.map(kernel =>
+        <pre key={kernel.id}>{kernel.id}</pre>
+      )}
+    </div>
+  </div>
+
+state$
+  .subscribe(({ version, kernels }) => {
+    console.log(version);
+    ReactDOM.render(<App version={version} kernels={kernels} />, root);
   },
   () => console.error('hey'))
