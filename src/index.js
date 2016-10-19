@@ -65,12 +65,14 @@ window.serverConfig = serverConfig;
 // If using `npm link rx-jupyter`, the Observable and the one imported here do
 // not match, which means we don't have all the operators we want
 // To get around this, we wrap the Observables by creating a new Observable
-const wrap = Rx.Observable.from;
+// const wrap = Rx.Observable.from;
 
 const version = jupyter.apiVersion(serverConfig);
-const kernels = jupyter.kernels.list(serverConfig);
 
-const state$ = Rx.Observable.combineLatest(version, kernels,
+const kernel$ = Rx.Observable.interval(1000)
+                    .switchMap(() => jupyter.kernels.list(serverConfig));
+
+const state$ = Rx.Observable.combineLatest(version, kernel$,
   (version, kernels) => ({ version: version.response.version, kernels: kernels.response }));
 
 const root = document.getElementById('root');
@@ -87,7 +89,10 @@ const App = (props) =>
 
 state$
   .subscribe(({ version, kernels }) => {
-    console.log(version);
     ReactDOM.render(<App version={version} kernels={kernels} />, root);
   },
-  () => console.error('hey'))
+  (err) => {
+    console.error(err);
+    ReactDOM.render(<code>{err.toString()}</code>, root);
+  }
+)
