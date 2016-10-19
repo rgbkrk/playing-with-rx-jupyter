@@ -11,7 +11,7 @@ npm link
 ## Notebook server that allows access to our React app
 
 ```
-jupyter notebook --NotebookApp.allow_origin='http://127.0.0.1:3000'
+jupyter notebook --NotebookApp.allow_origin_pat='^https?://127.0.0.1:.*'
 ```
 
 ## Now for this repo
