@@ -2,21 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+const Rx = require('rxjs/Rx');
+global.Rx = Rx;
+
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/pluck';
 
 const uuid = require('uuid');
 
-import { WebSocketSubject } from 'rxjs/observable/dom/WebSocketSubject';
-import { webSocket } from 'rxjs/observable/dom/webSocket';
-
-window.webSocket = webSocket;
-window.WebSocketSubject = WebSocketSubject;
-
 const session = uuid.v4();
 
 export function createMessage(msg_type, fields) {
-  const username = 'kylek';
+  const username = 'hokey';
   return Object.assign({
     header: {
       username,
@@ -62,21 +59,23 @@ const serverConfig = {
   crossDomain: true,
 };
 
-const formWebSocketURL = (id) => {
-  return `${serverConfig.endpoint}/api/kernels/${id}/channels`;
-}
-
-window.formWebSocketURL = formWebSocketURL;
 window.jupyter = jupyter;
 window.serverConfig = serverConfig;
 
-jupyter.kernels.list(serverConfig)
+// If using `npm link rx-jupyter`, the Observable and the one imported here do
+// not match, which means we don't have all the operators we want
+// To get around this, we wrap the Observables by creating a new Observable
+const wrap = Rx.Observable.from;
+
+const api = wrap(jupyter.apiVersion(serverConfig));
+
+wrap(jupyter.kernels.list(serverConfig))
   .map(x => x.response)
   .subscribe(kernels => {
     ReactDOM.render(
       <div>
         { kernels.map(kernel =>
-          <pre key={kernel.id}>{formWebSocketURL(kernel.id)}</pre>
+          <pre key={kernel.id}>{kernel.id}</pre>
         )}
       </div>,
       document.getElementById('root')
