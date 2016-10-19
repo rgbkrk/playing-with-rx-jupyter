@@ -8,10 +8,10 @@ From a dev setup of `rx-jupyter` run:
 npm link
 ```
 
-## Scary wide open notebook server
+## Notebook server that allows access to our React app
 
 ```
-jupyter notebook --NotebookApp.allow_origin='*'
+jupyter notebook --NotebookApp.allow_origin='http://127.0.0.1:3000'
 ```
 
 ## Now for this repo

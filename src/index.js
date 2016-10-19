@@ -51,20 +51,14 @@ export function createExecuteRequest(code) {
   return executeRequest;
 }
 
-const ws = webSocket('ws://localhost:8888/api/kernels/4ce72033-e7f6-4b25-ba4b-0b8b72f7668c/channels')
-
-ws.subscribe(console.log.bind(console));
-
 window.createExecuteRequest = createExecuteRequest;
-
-window.ws = ws;
 
 window.createMessage = createMessage;
 
 const jupyter = require('rx-jupyter');
 
 const serverConfig = {
-  endpoint: "http://localhost:8888",
+  endpoint: "http://127.0.0.1:8888",
   crossDomain: true,
 };
 
