@@ -5,8 +5,10 @@ import './index.css';
 const Rx = require('rxjs/Rx');
 global.Rx = Rx;
 
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/pluck';
+import { ajax } from 'rxjs/observable/dom/ajax';
+
+global.ajax = ajax;
+global.Observable = Rx.Observable;
 
 const uuid = require('uuid');
 
@@ -69,27 +71,99 @@ window.serverConfig = serverConfig;
 
 const version = jupyter.apiVersion(serverConfig);
 
-const kernel$ = Rx.Observable.interval(1000)
-                    .switchMap(() => jupyter.kernels.list(serverConfig));
+const poll = (obs, interval) => {
+  const mappedObs = Rx.Observable.from(obs)
+    .catch((err) => {
+      if (err.xhr) {
+        return Rx.Observable.of(err.xhr);
+      }
+      throw err;
+    })
 
-const state$ = Rx.Observable.combineLatest(version, kernel$,
-  (version, kernels) => ({ version: version.response.version, kernels: kernels.response }));
+  return Rx.Observable.merge(
+    // Fire off the first API Call
+    mappedObs,
+    // Poll on an interval
+    Rx.Observable.interval(interval)
+                 .mergeMap(() => mappedObs)
+  )
+}
+
+const kernel$ = poll(jupyter.kernels.list(serverConfig));
+const content$ = poll(jupyter.contents.get(serverConfig, ""));
+
+const state$ = Rx.Observable.combineLatest(version, kernel$, content$,
+  (version, kernels, contents) => ({ version: version.response.version, kernels: kernels.response, contents: contents.response }));
 
 const root = document.getElementById('root');
+
+const Directory = (props) => (
+  <ul>
+  {
+    props.content.map(entry => {
+      let icon = ".";
+      switch(entry.type) {
+        case "notebook":
+          icon = "📔";
+          break;
+        case "file":
+          icon = "📋";
+          break;
+        case "directory":
+          icon = "📁";
+          break;
+        default:
+          icon = "❓";
+          break;
+      }
+      return (
+        <li key={entry.name}>{icon} {entry.name}</li>
+      );
+    }
+    )
+  }
+  </ul>
+);
+
+const Content = (props) => {
+  switch(props.contents.type) {
+    case "directory":
+      return (
+        <Directory content={props.contents.content} />
+      );
+    default:
+      return (
+        <pre>{JSON.stringify(props.contents, 2, 2)}</pre>
+      );
+  }
+}
 
 const App = (props) =>
   <div>
     <pre>Version: {props.version}</pre>
-    <div>
-      { props.kernels.map(kernel =>
-        <pre key={kernel.id}>{kernel.id}</pre>
-      )}
-    </div>
+    {
+      props.kernels && props.kernels.length > 0 ? (
+        <div>
+        <h2>Kernels</h2>
+          { props.kernels.map(kernel =>
+            <pre key={kernel.id}>{kernel.id}</pre>
+          )}
+        </div>
+      ) : null
+    }
+    {
+      props.contents ? (
+        <div>
+        <h2>Content!</h2>
+        <Content contents={props.contents} />
+        </div>
+      ) : null
+    }
   </div>
 
 state$
-  .subscribe(({ version, kernels }) => {
-    ReactDOM.render(<App version={version} kernels={kernels} />, root);
+  .subscribe(({ version, kernels, contents }) => {
+    ReactDOM.render(<App version={version} kernels={kernels} contents={contents} />, root);
   },
   (err) => {
     console.error(err);
