@@ -10,9 +10,6 @@ import { ajax } from 'rxjs/observable/dom/ajax';
 global.ajax = ajax;
 global.Observable = Rx.Observable;
 
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/pluck';
-
 const uuid = require('uuid');
 
 const session = uuid.v4();
@@ -74,17 +71,24 @@ window.serverConfig = serverConfig;
 
 const version = jupyter.apiVersion(serverConfig);
 
-const kernel$ = Rx.Observable.interval(500)
-                    .switchMap(() => jupyter.kernels.list(serverConfig));
+const poll = (obs, interval) => {
+  const mappedObs = Rx.Observable.from(obs)
+    .catch((err) => {
+      if (err.xhr) {
+        return Rx.Observable.of(err.xhr);
+      }
+      throw err;
+    })
 
-const content$ = Rx.Observable.interval(500)
-                    .switchMap(() => jupyter.contents.get(serverConfig, ""))
-                    .catch((err) => {
-                      if (err.xhr) {
-                        return Rx.Observable.of(err.xhr);
-                      }
-                      throw err;
-                    });
+  return Rx.Observable.merge(
+    mappedObs,
+    Rx.Observable.interval(interval)
+                 .switchMap(() => mappedObs)
+  )
+}
+
+const kernel$ = poll(jupyter.kernels.list(serverConfig));
+const content$ = poll(jupyter.contents.get(serverConfig, ""));
 
 const state$ = Rx.Observable.combineLatest(version, kernel$, content$,
   (version, kernels, contents) => ({ version: version.response.version, kernels: kernels.response, contents: contents.response }));
