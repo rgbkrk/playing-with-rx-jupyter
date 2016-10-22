@@ -81,9 +81,11 @@ const poll = (obs, interval) => {
     })
 
   return Rx.Observable.merge(
+    // Fire off the first API Call
     mappedObs,
+    // Poll on an interval
     Rx.Observable.interval(interval)
-                 .switchMap(() => mappedObs)
+                 .mergeMap(() => mappedObs)
   )
 }
 
@@ -94,6 +96,47 @@ const state$ = Rx.Observable.combineLatest(version, kernel$, content$,
   (version, kernels, contents) => ({ version: version.response.version, kernels: kernels.response, contents: contents.response }));
 
 const root = document.getElementById('root');
+
+const Directory = (props) => (
+  <ul>
+  {
+    props.content.map(entry => {
+      let icon = ".";
+      switch(entry.type) {
+        case "notebook":
+          icon = "📔";
+          break;
+        case "file":
+          icon = "📋";
+          break;
+        case "directory":
+          icon = "📁";
+          break;
+        default:
+          icon = "❓";
+          break;
+      }
+      return (
+        <li key={entry.name}>{icon} {entry.name}</li>
+      );
+    }
+    )
+  }
+  </ul>
+);
+
+const Content = (props) => {
+  switch(props.contents.type) {
+    case "directory":
+      return (
+        <Directory content={props.contents.content} />
+      );
+    default:
+      return (
+        <pre>{JSON.stringify(props.contents, 2, 2)}</pre>
+      );
+  }
+}
 
 const App = (props) =>
   <div>
@@ -111,32 +154,8 @@ const App = (props) =>
     {
       props.contents ? (
         <div>
-        <h2>Contents</h2>
-        <ul>
-        {
-          props.contents.content.map(entry => {
-            let icon = ".";
-            switch(entry.type) {
-              case "notebook":
-                icon = "📔";
-                break;
-              case "file":
-                icon = "📋";
-                break;
-              case "directory":
-                icon = "📁";
-                break;
-              default:
-                icon = "❓";
-                break;
-            }
-            return (
-              <li key={entry.name}>{icon} {entry.name}</li>
-            );
-          }
-          )
-        }
-        </ul>
+        <h2>Content!</h2>
+        <Content contents={props.contents} />
         </div>
       ) : null
     }
