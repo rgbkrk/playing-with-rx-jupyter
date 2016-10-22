@@ -5,6 +5,11 @@ import './index.css';
 const Rx = require('rxjs/Rx');
 global.Rx = Rx;
 
+import { ajax } from 'rxjs/observable/dom/ajax';
+
+global.ajax = ajax;
+global.Observable = Rx.Observable;
+
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/pluck';
 
@@ -69,27 +74,73 @@ window.serverConfig = serverConfig;
 
 const version = jupyter.apiVersion(serverConfig);
 
-const kernel$ = Rx.Observable.interval(1000)
+const kernel$ = Rx.Observable.interval(500)
                     .switchMap(() => jupyter.kernels.list(serverConfig));
 
-const state$ = Rx.Observable.combineLatest(version, kernel$,
-  (version, kernels) => ({ version: version.response.version, kernels: kernels.response }));
+const content$ = Rx.Observable.interval(500)
+                    .switchMap(() => jupyter.contents.get(serverConfig, ""))
+                    .catch((err) => {
+                      if (err.xhr) {
+                        return Rx.Observable.of(err.xhr);
+                      }
+                      throw err;
+                    });
+
+const state$ = Rx.Observable.combineLatest(version, kernel$, content$,
+  (version, kernels, contents) => ({ version: version.response.version, kernels: kernels.response, contents: contents.response }));
 
 const root = document.getElementById('root');
 
 const App = (props) =>
   <div>
     <pre>Version: {props.version}</pre>
-    <div>
-      { props.kernels.map(kernel =>
-        <pre key={kernel.id}>{kernel.id}</pre>
-      )}
-    </div>
+    {
+      props.kernels && props.kernels.length > 0 ? (
+        <div>
+        <h2>Kernels</h2>
+          { props.kernels.map(kernel =>
+            <pre key={kernel.id}>{kernel.id}</pre>
+          )}
+        </div>
+      ) : null
+    }
+    {
+      props.contents ? (
+        <div>
+        <h2>Contents</h2>
+        <ul>
+        {
+          props.contents.content.map(entry => {
+            let icon = ".";
+            switch(entry.type) {
+              case "notebook":
+                icon = "📔";
+                break;
+              case "file":
+                icon = "📋";
+                break;
+              case "directory":
+                icon = "📁";
+                break;
+              default:
+                icon = "❓";
+                break;
+            }
+            return (
+              <li key={entry.name}>{icon} {entry.name}</li>
+            );
+          }
+          )
+        }
+        </ul>
+        </div>
+      ) : null
+    }
   </div>
 
 state$
-  .subscribe(({ version, kernels }) => {
-    ReactDOM.render(<App version={version} kernels={kernels} />, root);
+  .subscribe(({ version, kernels, contents }) => {
+    ReactDOM.render(<App version={version} kernels={kernels} contents={contents} />, root);
   },
   (err) => {
     console.error(err);
