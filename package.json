@@ -8,6 +8,7 @@
   "dependencies": {
     "react": "^15.3.2",
     "react-dom": "^15.3.2",
+    "rx-jupyter": "^1.0.3",
     "rxjs": "^5.0.0-rc.1",
     "uuid": "^2.0.3"
   },
