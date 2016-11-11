@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import Content from './components/content';
 
 const Rx = require('rxjs/Rx');
 global.Rx = Rx;
@@ -86,57 +87,17 @@ const poll = (obs, interval) => {
     // Poll on an interval
     Rx.Observable.interval(interval)
                  .mergeMap(() => mappedObs)
+                 .do(x => console.log(x))
   )
 }
 
-const kernel$ = poll(jupyter.kernels.list(serverConfig));
-const content$ = poll(jupyter.contents.get(serverConfig, ""));
+const kernel$ = poll(jupyter.kernels.list(serverConfig), 500);
+const content$ = poll(jupyter.contents.get(serverConfig, ""), 500);
 
 const state$ = Rx.Observable.combineLatest(version, kernel$, content$,
   (version, kernels, contents) => ({ version: version.response.version, kernels: kernels.response, contents: contents.response }));
 
 const root = document.getElementById('root');
-
-const Directory = (props) => (
-  <ul>
-  {
-    props.content.map(entry => {
-      let icon = ".";
-      switch(entry.type) {
-        case "notebook":
-          icon = "📔";
-          break;
-        case "file":
-          icon = "📋";
-          break;
-        case "directory":
-          icon = "📁";
-          break;
-        default:
-          icon = "❓";
-          break;
-      }
-      return (
-        <li key={entry.name}>{icon} {entry.name}</li>
-      );
-    }
-    )
-  }
-  </ul>
-);
-
-const Content = (props) => {
-  switch(props.contents.type) {
-    case "directory":
-      return (
-        <Directory content={props.contents.content} />
-      );
-    default:
-      return (
-        <pre>{JSON.stringify(props.contents, 2, 2)}</pre>
-      );
-  }
-}
 
 const App = (props) =>
   <div>
