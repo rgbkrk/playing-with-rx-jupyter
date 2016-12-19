@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import Content from './components/content';
-
 const Rx = require('rxjs/Rx');
 global.Rx = Rx;
 
@@ -47,7 +46,6 @@ export function createExecuteRequest(code) {
   executeRequest.msg_id = executeRequest.header.msg_id;
   executeRequest.channel = 'shell';
   executeRequest.buffers = [] ;
-
   return executeRequest;
 }
 
@@ -87,7 +85,6 @@ const poll = (obs, interval) => {
     // Poll on an interval
     Rx.Observable.interval(interval)
                  .mergeMap(() => mappedObs)
-                 .do(x => console.log(x))
   )
 }
 

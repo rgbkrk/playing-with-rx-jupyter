@@ -1,5 +1,22 @@
 import React from 'react';
+const Rx = require('rxjs/Rx');
+const Observable = Rx.Observable;
+const jupyter = require('rx-jupyter');
+const serverConfig = {
+  endpoint: "http://127.0.0.1:8888",
+  crossDomain: true,
+};
+
 export default class  Directory extends React.Component {
+
+  constructor() {
+    super();
+    this.showContents = this.showContents.bind(this);
+  };
+
+  showContents(path) {
+    const content$ = poll(jupyter.contents.get(serverConfig, path), 500);
+  }
 
   render() {
     return (<ul>
@@ -21,7 +38,7 @@ export default class  Directory extends React.Component {
             break;
         }
         return (
-          <li key={entry.name}>{icon} {entry.name}</li>
+          <li onClick={this.showContents} key={entry.name}>{icon} {entry.name}</li>
         );
       }
       )
