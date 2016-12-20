@@ -1,7 +1,6 @@
 import React from 'react';
-const Rx = require('rxjs/Rx');
-const Observable = Rx.Observable;
 const jupyter = require('rx-jupyter');
+import { poll } from '../App';
 const serverConfig = {
   endpoint: "http://127.0.0.1:8888",
   crossDomain: true,
@@ -16,6 +15,7 @@ export default class  Directory extends React.Component {
 
   showContents(path) {
     const content$ = poll(jupyter.contents.get(serverConfig, path), 500);
+    return content$;
   }
 
   render() {

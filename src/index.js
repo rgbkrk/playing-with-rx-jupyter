@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import '../static/index.css';
 import Content from './components/content';
 const Rx = require('rxjs/Rx');
 global.Rx = Rx;
@@ -70,7 +70,7 @@ window.serverConfig = serverConfig;
 
 const version = jupyter.apiVersion(serverConfig);
 
-const poll = (obs, interval) => {
+export const poll = (obs, interval) => {
   const mappedObs = Rx.Observable.from(obs)
     .catch((err) => {
       if (err.xhr) {
