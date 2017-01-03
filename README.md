@@ -1,13 +1,5 @@
 # Running
 
-## Dev setup of rx-jupyter
-
-From a dev setup of `rx-jupyter` run:
-
-```
-npm link
-```
-
 ## Notebook server that allows access to our React app (and other localhost servers)
 
 ```
