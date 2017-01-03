@@ -12,7 +12,6 @@ Clone this repo then
 
 ```
 npm i
-npm link rx-jupyter
 npm start
 ```
 
